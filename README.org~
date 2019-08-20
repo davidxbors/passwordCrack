@@ -1,0 +1,63 @@
+* PasswordCrack
+  PasswordCrack is a language which should be used in generating alphanumeric combinations. It's compiler(the only one at this moment, but I plan to write one in C in the future) is written in Go.
+
+** Usage
+   #+BEGIN_SRC bash
+     ./passwordCrack <pc-doc-to-compile>
+   #+END_SRC
+
+** Documentation
+*** Statements
+    Statements consist of either a *literal* or a *variable*, or combinations of both. A literal is for example "zoidberg" or "password", and it's evaluated to "zoidberg", respectively "password". 
+    #+BEGIN_SRC 
+    {password}
+    {%someVarExample%}
+    {password%years%}
+    #+END_SRC
+*** Variables
+    Variables are declared by the following expression:
+    #+BEGIN_SRC 
+    %variable_name%
+    #+END_SRC
+    This is followed by all the *rules* that one wants to define in that variable. In the end one must specify the end of a set of rules that need to be attributed to a variable, by repeating the opening expression. 
+    *IMPORTANT*: There cannot exist nested variables!
+    Example of a variable declaration:
+    #+BEGIN_SRC 
+    %dogBreeds%
+    p^ug
+    (golden retriever/labrador)
+    corgi
+    %dogBreeds%
+    #+END_SRC
+    Example of a variable use:
+    #+BEGIN_SRC 
+    {Rex the %dogBreeds%}    
+    #+END_SRC
+    *Explanation*
+    The code from the above is going to output Rex the + all the possible outcomes of all the rules defined in the variables dogBreeds. This means it's going to generate:
+    #+BEGIN_SRC 
+    Rex the pug
+    Rex the Pug
+    #+END_SRC
+    Because of the first rule
+    #+BEGIN_SRC 
+    Rex the golden retriever
+    Rex the labrador
+    #+END_SRC
+    Because of the second rule
+    #+BEGIN_SRC 
+    Rex the corgi
+    #+END_SRC
+    Because of the third rule
+*** Rules
+    Rules are the heart and soul of passwordCrack. A rule takes a literal and modifies it by a set of deriving rules creating all the possible outcomes when derivated.
+    *Literal*
+    #+BEGIN_SRC 
+    corgi
+    #+END_SRC
+    This one is just a literal, so it's gonna evaluate to "corgi"
+    *^*
+    #+BEGIN_SRC 
+    p^ug
+    #+END_SRC
+    The *or opposite* means that the character(or group of characters) behind it can either be in the state they currenly are ore in the opposite.
