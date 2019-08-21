@@ -5,6 +5,9 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"unicode"
+	"strings"
+	_ "unicode/utf8"
 	_ "io"
 )
 
@@ -77,13 +80,123 @@ func findVarByName(name string) int {
 	return -1
 }
 
+func reverse(s string) string {
+  runes := []rune(s)
+  for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+    runes[i], runes[j] = runes[j], runes[i]
+  }
+  return string(runes)
+}
+
+// implementation of the or opposite operation
+func orOpposite(out string) string {
+	if out == "" {
+		fmt.Println("not computing")
+		return ""
+	}
+	var aux string
+	charToCheck := rune(out[len(out)-1])
+	if unicode.IsLower(charToCheck){
+		aux = reverse(out)
+		aux = strings.Replace(aux, string(charToCheck), string(unicode.ToUpper(charToCheck)), 1)
+	} else {
+		aux = reverse(out)
+		aux = strings.Replace(aux, string(charToCheck), string(unicode.ToLower(charToCheck)), 1)		
+	}
+	retVal := reverse(aux)
+	return retVal
+}
+
+func oneOrZero(out string) string {
+	if out == "" {
+		return ""
+	}
+	return out[:len(out)-1]
+}
+
+// just concatenates to arrays
+func addArrays(dst, src []string) []string {
+	for _, el := range src{
+		dst = append(dst, el)
+	}
+	return dst
+}
+
+// one or zero in combo with or opposite
+func oozOO(rule string, localOutcome []string) []string {
+	var l_localOutcome []string
+	for _, out := range localOutcome{
+		toggledOut := orOpposite(out)
+		leftOut    := oneOrZero(out)
+		l_localOutcome = append(l_localOutcome, toggledOut)
+		l_localOutcome = append(l_localOutcome, leftOut)
+	}
+	fmt.Println(l_localOutcome)
+	localOutcome = addArrays(localOutcome, l_localOutcome)
+	return localOutcome
+}
+
 func evalRule(rule string){
 	// rn localOutcome only has the literal of this rule
 	// but when we will implement deriving rules it's gonna have
 	// more outcomes into it
 	// add rules outcomes to the local outcomes
 	var localOutcome []string
-	localOutcome = append(localOutcome, rule)
+	for index:=0; index < len(rule); index += 1 {
+		char := rule[index]
+		switch string(char){
+			case "^":
+			// whenever this char occurs we take each outcome
+			// generated till now and we make a duplicate of itself
+			// but with a toggled last char (upper/lower case tog)
+			// the special ?^ / ^? case
+			if string(rule[index+1]) == "?"{
+				index += 1
+				localOutcome = oozOO(rule, localOutcome)
+				fmt.Println("special case!")
+			} else {
+			var l_localOutcome []string
+			for _, out := range localOutcome{
+				toggledOut := orOpposite(out)
+				fmt.Println(toggledOut)
+				l_localOutcome = append(l_localOutcome, toggledOut)
+			}
+			fmt.Println(l_localOutcome)
+			localOutcome = addArrays(localOutcome, l_localOutcome)
+			fmt.Println("Upper!")
+			}
+			case "?":
+			// whenever this char occurs we take each outcome
+			// generated till now and make a duplicate of itself
+			// but without the last char
+			if string(rule[index+1]) == "^"{
+				fmt.Println("special case!")
+				localOutcome = oozOO(rule, localOutcome)
+				index += 1
+			} else {
+			var l_localOutcome []string
+			for _, out := range localOutcome{
+				leftOut := oneOrZero(out)
+				fmt.Println(leftOut)
+				l_localOutcome = append(l_localOutcome, leftOut)
+			}
+			fmt.Println(l_localOutcome)
+			localOutcome = addArrays(localOutcome, l_localOutcome)
+				fmt.Println("Deleting it, chief!")
+			}
+			default :
+			// standard literal addition to the array
+			if localOutcome == nil {
+				localOutcome = append(localOutcome, string(char))
+			} else {
+				for index,_ := range localOutcome {
+					localOutcome[index] += string(char)
+				}
+			}
+			fmt.Println("Literal")
+		}
+	}
+	//localOutcome = append(localOutcome, evaluatedRule)
 	// add local outcomes to super outcomes
 	for _, out := range localOutcome {
 		superOutcomes = append(superOutcomes, out)
