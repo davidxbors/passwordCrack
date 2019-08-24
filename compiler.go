@@ -23,6 +23,7 @@ var (
 	cc string
 	outcomes []string
 	superOutcomes []string
+	protectedIndex = -1
 )
 
 func check(e error){
@@ -125,41 +126,78 @@ func addArrays(dst, src []string) []string {
 // one or zero in combo with or opposite
 func oozOO(rule string, localOutcome []string) []string {
 	var l_localOutcome []string
-	for _, out := range localOutcome{
-		toggledOut := orOpposite(out)
-		leftOut    := oneOrZero(out)
-		l_localOutcome = append(l_localOutcome, toggledOut)
-		l_localOutcome = append(l_localOutcome, leftOut)
+	for index, out := range localOutcome{
+		if index > protectedIndex{
+			toggledOut := orOpposite(out)
+			leftOut    := oneOrZero(out)
+			l_localOutcome = append(l_localOutcome, toggledOut)
+			l_localOutcome = append(l_localOutcome, leftOut)
+		}
 	}
 	fmt.Println(l_localOutcome)
 	localOutcome = addArrays(localOutcome, l_localOutcome)
 	return localOutcome
 }
 
+func doubleArray(arr []string) (l_arr []string, pi int) {
+	pi = len(arr)-1
+	for _, el := range arr {
+			l_arr = append(l_arr, el)
+	}
+	for index, el := range arr {
+		if index > protectedIndex{
+			l_arr = append(l_arr, el)
+		}
+	}
+	return
+}
+
 func evalRule(rule string){
-	// rn localOutcome only has the literal of this rule
-	// but when we will implement deriving rules it's gonna have
-	// more outcomes into it
 	// add rules outcomes to the local outcomes
 	var localOutcome []string
+	protectedIndex = -1
 	for index:=0; index < len(rule); index += 1 {
 		char := rule[index]
 		switch string(char){
+			case "\\":
+			fmt.Println("op to literal here!!")
+			// standard literal addition to the array
+			if localOutcome == nil {
+				localOutcome = append(localOutcome, string(rule[index+1]))
+			} else {
+				for ind,_ := range localOutcome {
+					if ind > protectedIndex{
+						localOutcome[ind] += string(rule[index+1])
+					}
+				}
+			}
+			//fmt.Println(string(rule[index+1]))
+			index += 1
+			case "/":
+			if string(rule[index + 1]) == "+"{
+				index += 1
+				fmt.Println("new rule!")
+				localOutcome, protectedIndex = doubleArray(localOutcome)
+			} else {
+				log.Fatal("/ is a reserved char. Did you mean to write /+? If not and you want to have the literal / use \\/")
+			}
 			case "^":
 			// whenever this char occurs we take each outcome
 			// generated till now and we make a duplicate of itself
 			// but with a toggled last char (upper/lower case tog)
 			// the special ?^ / ^? case
-			if string(rule[index+1]) == "?"{
+			if index + 1 < len(rule) && string(rule[index+1]) == "?"{
 				index += 1
 				localOutcome = oozOO(rule, localOutcome)
 				fmt.Println("special case!")
 			} else {
 			var l_localOutcome []string
-			for _, out := range localOutcome{
-				toggledOut := orOpposite(out)
-				fmt.Println(toggledOut)
-				l_localOutcome = append(l_localOutcome, toggledOut)
+				for index, out := range localOutcome{
+					if index > protectedIndex{
+						toggledOut := orOpposite(out)
+						fmt.Println(toggledOut)
+						l_localOutcome = append(l_localOutcome, toggledOut)
+					}
 			}
 			fmt.Println(l_localOutcome)
 			localOutcome = addArrays(localOutcome, l_localOutcome)
@@ -169,16 +207,18 @@ func evalRule(rule string){
 			// whenever this char occurs we take each outcome
 			// generated till now and make a duplicate of itself
 			// but without the last char
-			if string(rule[index+1]) == "^"{
+			if  index + 1 < len(rule) && string(rule[index+1]) == "^"{
 				fmt.Println("special case!")
 				localOutcome = oozOO(rule, localOutcome)
 				index += 1
 			} else {
 			var l_localOutcome []string
-			for _, out := range localOutcome{
-				leftOut := oneOrZero(out)
-				fmt.Println(leftOut)
-				l_localOutcome = append(l_localOutcome, leftOut)
+				for index, out := range localOutcome{
+					if index > protectedIndex{
+						leftOut := oneOrZero(out)
+						fmt.Println(leftOut)
+						l_localOutcome = append(l_localOutcome, leftOut)
+					}
 			}
 			fmt.Println(l_localOutcome)
 			localOutcome = addArrays(localOutcome, l_localOutcome)
@@ -190,7 +230,9 @@ func evalRule(rule string){
 				localOutcome = append(localOutcome, string(char))
 			} else {
 				for index,_ := range localOutcome {
-					localOutcome[index] += string(char)
+					if index > protectedIndex{
+						localOutcome[index] += string(char)
+					}
 				}
 			}
 			fmt.Println("Literal")
