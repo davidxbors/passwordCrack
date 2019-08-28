@@ -152,6 +152,81 @@ func doubleArray(arr []string) (l_arr []string, pi int) {
 	return
 }
 
+func searchNextOp(rule string, index int) (ind int, op string){
+	char := string(rule[index])
+	switch char{
+		case "/":
+		if string(rule[index + 1]) == "+"{
+			index += 1
+			op = "/+"
+			ind = index
+		} else {
+			log.Fatal("/ is a reserved char. Did you mean to write /+? If not and you want to have the literal / use \\/")
+		}
+		case "^":
+		if index + 1 < len(rule) && string(rule[index+1]) == "?"{
+			index += 1
+			ind = index
+			op = "^?"
+		} else {
+			ind = index
+			op = "^"
+		}
+		case "?":
+		if index + 1 < len(rule) && string(rule[index+1]) == "^"{
+			index += 1
+			ind = index
+			op = "^?"
+		} else {
+			ind = index
+			op = "?"
+		}
+		default:
+		log.Fatal("You need to apply an operation to a group, otherwise don't create the group")
+	}
+	return
+}
+
+func applyOperation(localOutcome []string, pIndex int, inside, op string)([]string,int){
+	var l_local []string
+	switch op{
+		case "^":
+		fmt.Printf("^ to %s\n", inside)
+		length := len(localOutcome)
+		for ind := pIndex+1; ind < length; ind+=1{
+			addGroup2 := localOutcome[ind] + strings.ToUpper(inside)
+			localOutcome[ind] = localOutcome[ind] + inside
+			l_local = append(l_local, addGroup2)
+		}
+		case "?":
+		fmt.Printf("? to %s\n", inside)
+		for ind := pIndex+1; ind < len(localOutcome); ind+=1{
+			addGroup := localOutcome[ind] + inside
+			l_local   = append(l_local, addGroup)
+		}
+		case "/+":
+		fmt.Printf("/+ to %s\n", inside)
+		for index,_ := range localOutcome{
+			if index > protectedIndex{
+				localOutcome[index] += inside
+			}
+		}
+		localOutcome, pIndex = doubleArray(localOutcome)
+		case "^?":
+		fmt.Printf("^? to %s\n", inside)
+		for ind := pIndex+1; ind < len(localOutcome); ind+=1{
+			addGroup  := localOutcome[ind] + inside
+			addGroup2 := localOutcome[ind] + strings.ToUpper(inside)
+			l_local = append(l_local, addGroup)
+			l_local = append(l_local, addGroup2)
+		}
+		default:
+		log.Fatal("Apply a valid operation to the group")
+	}
+	localOutcome = addArrays(localOutcome, l_local)
+	return localOutcome, pIndex
+}
+
 func evalRule(rule string){
 	// add rules outcomes to the local outcomes
 	var localOutcome []string
@@ -159,6 +234,23 @@ func evalRule(rule string){
 	for index:=0; index < len(rule); index += 1 {
 		char := rule[index]
 		switch string(char){
+			case "(":
+			insideParen := ""
+			var op string
+			for i:=index+1; i < len(rule); i+=1 {
+				index += 1
+				ch := string(rule[i])
+				if ch == ")"{
+					break
+				}
+				insideParen += ch
+			}
+			// here we check for the ( / ) and act
+			// this feature is not implemented yet tho
+			
+			//check for any rule that we need to apply
+			index, op = searchNextOp(rule, index+1)
+			localOutcome, protectedIndex = applyOperation(localOutcome, protectedIndex, insideParen, op)
 			case "\\":
 			fmt.Println("op to literal here!!")
 			// standard literal addition to the array
@@ -341,6 +433,13 @@ func parser(line string) {
 		case '%':
 			varParser(line)
 		case '{':
+			if line[1] == '~'{
+				evalRule(line[2:(len(line)-2)])
+				for _, out := range superOutcomes{
+					fmt.Println(out)
+				}
+				superOutcomes = nil
+			} else {
 			eval(line[1:(len(line)-1)])
 			fmt.Println("After the eval of the statement: ")
 			for _, outcome := range outcomes {
@@ -349,6 +448,7 @@ func parser(line string) {
 			outcomes = nil
 			fmt.Println()
 			//fmt.Println("A thing to eval")
+			}
 		default:
 			if state == "READV" {
 				rulesParser(line)

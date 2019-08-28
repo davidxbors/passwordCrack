@@ -95,6 +95,10 @@
     #+END_SRC
     it's gonna evaluate to ["password1", "password12", "password123", password1234"].
 
+    *?^* or *^?*
+    If there wouldn't be a special case built in the compiler for this scenario
+whenever the user would try to apply this both operations the compiler would either apply the rule to a character we don't want to derive or it would create a double of one of the outcomes.
+
     *IMPORTANT:* all the characters listed above as operators are reserved characters, so to use them one should proceed by placing a backslach behind them. *Keep in mind*, that the blackslash itself is a reserved character as well.
     #+BEGIN_SRC 
     pass(w\ord/phrase)?
